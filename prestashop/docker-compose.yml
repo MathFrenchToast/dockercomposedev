@@ -1,35 +1,58 @@
-# from : https://github.com/bitnami/containers/blob/main/bitnami/prestashop/docker-compose.yml
-# run with docker-compose up -d
-version: '2'
+# prestashop docker compose
+# run with: docker-compose up -d
+# access to frontend: http://localhost:8080/
+# access to admin: http://localhost:8080/admin382z use demo credentials: demo@prestashop.com/prestashop_demo
+# from: https://devdocs.prestashop-project.org/8/basics/installation/environments/docker/
+
+version: "3"
+
 services:
-  mariadb:
-    image: docker.io/bitnami/mariadb:10.6
-    environment:
-      # ALLOW_EMPTY_PASSWORD is recommended only for development.
-      - ALLOW_EMPTY_PASSWORD=yes
-      - MARIADB_USER=bn_prestashop
-      - MARIADB_DATABASE=bitnami_prestashop
-    volumes:
-      - 'mariadb_data:/bitnami/mariadb'
   prestashop:
-    image: docker.io/bitnami/prestashop:8
-    ports:
-      - '80:8080'
-      - '443:8443'
+    image: prestashop/prestashop
     environment:
-      - PRESTASHOP_HOST=localhost
-      - PRESTASHOP_DATABASE_HOST=mariadb
-      - PRESTASHOP_DATABASE_PORT_NUMBER=3306
-      - PRESTASHOP_DATABASE_USER=bn_prestashop
-      - PRESTASHOP_DATABASE_NAME=bitnami_prestashop
-      # ALLOW_EMPTY_PASSWORD is recommended only for development.
-      - ALLOW_EMPTY_PASSWORD=yes
-    volumes:
-      - 'prestashop_data:/bitnami/prestashop'
+      - DB_SERVER=db
+      - DB_NAME=prestashop
+      - DB_USER=prestashop
+      - DB_PASSWD=prestashop
+      - PS_DEV_MODE=0
+      - PS_DEMO_MODE=0
+      - PS_INSTALL_AUTO=1  # set to 0 for non demo data
+      - PS_DOMAIN=localhost:8080
+      - PS_FOLDER_ADMIN=admin382z
+      - PS_FOLDER_INSTALL=install382z
+      - ADMIN_MAIL=demo@prestashop.com
+      - ADMIN_PASSWD=prestashop_demo
+    links:
+      - db
     depends_on:
-      - mariadb
+      - db
+    ports:
+      - 8080:80
+    networks:
+      - prestashop-net
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:80" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  db:
+    image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      - MYSQL_ROOT_PASSWORD=admin
+      - MYSQL_DATABASE=prestashop
+      - MYSQL_USER=prestashop
+      - MYSQL_PASSWORD=prestashop
+    ports:
+      - 3306:3306  # expose port allow to request from external tool using 127.0.0.1:3306
+    networks:
+      - prestashop-net
+    volumes:
+      - dbdata:/var/lib/mysql
+
+networks:
+  prestashop-net:
+
 volumes:
-  mariadb_data:
-    driver: local
-  prestashop_data:
-    driver: local
+  dbdata:
