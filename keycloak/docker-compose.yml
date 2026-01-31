@@ -1,0 +1,51 @@
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:${KEYCLOAK_IMAGE_TAG}
+    restart: ${RESTART_POLICY}
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 200
+    read_only: ${KEYCLOAK_CONTAINER_READONLY}
+    tmpfs:
+      - /tmp
+    ports:
+      - "8080:8080"
+    volumes:
+      - ${KEYCLOAK_VOLUME_PATH}/data:/opt/keycloak/data:rw
+      - ${KEYCLOAK_VOLUME_PATH}/providers:/opt/keycloak/providers:rw
+      #- ${KEYCLOAK_VOLUME_PATH}/themes:/opt/keycloak/themes:rw
+    command: start-dev
+    environment:
+      # timezone inside container
+      - TZ
+
+      # necessary Keycloak options/variables
+      - KC_BOOTSTRAP_ADMIN_USERNAME
+      - KC_BOOTSTRAP_ADMIN_PASSWORD
+      - KC_DB
+      - KC_DB_URL_HOST
+      - KC_DB_URL_DATABASE
+      - KC_DB_USERNAME
+      - KC_DB_PASSWORD
+      - KC_HOSTNAME
+
+  postgres-keycloak:
+    image: postgres:${POSTGRES_IMAGE_TAG}
+    restart: ${RESTART_POLICY}
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 100
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
+    volumes:
+      - ${POSTGRES_DATA_PATH}:/var/lib/postgresql
+    environment:
+      # timezone inside container
+      - TZ
+
+      # necessary Postgres options/variables
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB=${POSTGRES_DB}

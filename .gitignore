@@ -1,0 +1,4 @@
+.env
+
+# ignore mattermost data if tested here
+mattermost/volumes/
